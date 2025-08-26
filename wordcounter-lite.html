@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Word & Character Counter — Case Converter</title>
+  <meta name="description" content="A fast, mobile-friendly word & character counter with uppercase, lowercase, Title Case, Sentence case, delete, undo and redo." />
+  <style>
+    :root{
+      --bg: #0b1020;
+      --panel: #121831;
+      --soft:#0f1530;
+      --text: #e9eefb;
+      --muted:#9aa4c4;
+      --accent:#6ea8fe;
+      --accent-2:#8bd8ff;
+      --border: #1c244a;
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+      --radius: 16px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      line-height:1.5;
+      color:var(--text);
+      background: radial-gradient(1200px 700px at 20% -20%, #1c2449 0%, var(--bg) 40%) fixed,
+                  radial-gradient(1000px 600px at 120% 20%, #162046 0%, var(--bg) 45%) fixed,
+                  var(--bg);
+    }
+    header{
+      padding:18px 16px;
+      position:sticky; top:0; z-index:10;
+      backdrop-filter: blur(6px);
+      background: linear-gradient(180deg, rgba(11,16,32,.85), rgba(11,16,32,.55));
+      border-bottom:1px solid var(--border);
+    }
+    .wrap{max-width:1100px;margin:0 auto;padding:0 14px}
+    .brand{display:flex;gap:10px;align-items:center;font-weight:700;letter-spacing:.3px}
+    .logo{
+      width:34px;height:34px;border-radius:10px;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
+      display:grid;place-items:center;color:#081225;font-weight:900; box-shadow: var(--shadow);
+    }
+    .brand small{color:var(--muted); font-weight:500}
+    main{padding:18px 0 40px}
+    .stats{
+      display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:14px;margin:8px 0 18px;
+    }
+    .card{
+      background:linear-gradient(180deg, rgba(20,26,54,.9), rgba(16,22,45,.88));
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:16px 18px;
+    }
+    .stat{
+      display:flex;justify-content:space-between;align-items:center;
+    }
+    .stat strong{font-size:clamp(26px,6vw,42px);line-height:1.1}
+    .stat label{font-size:14px;color:var(--muted);text-transform:uppercase;letter-spacing:.12em}
+    .toolbar{
+      display:flex;flex-wrap:wrap;gap:10px;margin:0 0 14px
+    }
+    .btn{
+      appearance:none;border:1px solid var(--border);
+      background:linear-gradient(180deg, #161d3c, #121832);
+      color:var(--text);padding:10px 12px;border-radius:12px;font-weight:600;
+      cursor:pointer;box-shadow: var(--shadow); transition:.15s transform,.15s opacity, .15s border-color;
+      user-select:none;
+    }
+    .btn:hover{transform:translateY(-1px); border-color:#2b386d}
+    .btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+    .btn.secondary{background:transparent}
+    textarea{
+      width:100%;resize:vertical;min-height:42vh;max-height:75vh;
+      padding:16px;border-radius:16px;border:1px solid var(--border);
+      background:linear-gradient(180deg, rgba(18,24,49,.9), rgba(11,16,32,.75));
+      color:var(--text);font-size:clamp(15px, 1.9vw, 17px);
+      outline:none;box-shadow: var(--shadow);
+    }
+    textarea::placeholder{color:#7f8ab2}
+    footer{opacity:.7;text-align:center;font-size:13px;margin:22px 0}
+    .sr-only{position:absolute !important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+    @media (max-width:640px){
+      .toolbar{position:sticky; top:68px; z-index:5;
+               background: linear-gradient(180deg, rgba(11,16,32,.95), rgba(11,16,32,.8));
+               padding:10px; border:1px solid var(--border); border-radius:14px}
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap brand">
+      <div class="logo">W</div>
+      Word & Character Counter <small>— Case Converter</small>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="stats">
+      <div class="card stat">
+        <label for="editor">Words</label>
+        <strong id="wordCount">0</strong>
+      </div>
+      <div class="card stat">
+        <label for="editor">Characters</label>
+        <strong id="charCount">0</strong>
+      </div>
+    </section>
+
+    <section class="toolbar" role="toolbar" aria-label="Text actions">
+      <button class="btn" id="upperBtn" title="Convert to UPPERCASE">UPPERCASE</button>
+      <button class="btn" id="lowerBtn" title="Convert to lowercase">lowercase</button>
+      <button class="btn" id="titleBtn" title="Convert to Title Case">Title Case</button>
+      <button class="btn" id="sentenceBtn" title="Convert to Sentence case">Sentence case</button>
+      <button class="btn secondary" id="undoBtn" title="Undo (Ctrl/Cmd+Z)" disabled>Undo</button>
+      <button class="btn secondary" id="redoBtn" title="Redo (Ctrl/Cmd+Y)" disabled>Redo</button>
+      <button class="btn" id="clearBtn" title="Delete all text">Delete</button>
+    </section>
+
+    <label class="sr-only" for="editor">Enter your text</label>
+    <textarea id="editor" placeholder="Start typing, or paste your text here…" spellcheck="true"></textarea>
+
+    <footer>
+      No Sign In Required, No Ads, Free To Use.
+    </footer>
+  </main>
+
+<script>
+(function(){
+  const editor = document.getElementById('editor');
+  const wordEl = document.getElementById('wordCount');
+  const charEl = document.getElementById('charCount');
+
+  const undoBtn = document.getElementById('undoBtn');
+  const redoBtn = document.getElementById('redoBtn');
+  const clearBtn = document.getElementById('clearBtn');
+  const upperBtn = document.getElementById('upperBtn');
+  const lowerBtn = document.getElementById('lowerBtn');
+  const titleBtn = document.getElementById('titleBtn');
+  const sentenceBtn = document.getElementById('sentenceBtn');
+
+  // --- History stack for Undo/Redo ---
+  const history = { stack: [], index: -1, max: 200 };
+  function pushHistory(value){
+    // Avoid duplicates
+    if (history.index >= 0 && history.stack[history.index] === value) return;
+    history.stack = history.stack.slice(0, history.index+1);
+    history.stack.push(value);
+    if (history.stack.length > history.max) history.stack.shift();
+    history.index = history.stack.length - 1;
+    updateUndoRedoButtons();
+  }
+  function updateUndoRedoButtons(){
+    undoBtn.disabled = history.index <= 0;
+    redoBtn.disabled = history.index >= history.stack.length - 1;
+  }
+  function undo(){
+    if (history.index > 0){
+      history.index--;
+      setEditor(history.stack[history.index], false);
+    }
+  }
+  function redo(){
+    if (history.index < history.stack.length - 1){
+      history.index++;
+      setEditor(history.stack[history.index], false);
+    }
+  }
+  function setEditor(text, push=true){
+    const pos = Math.min(editor.selectionEnd, text.length);
+    editor.value = text;
+    editor.selectionStart = editor.selectionEnd = pos;
+    updateCounts();
+    if (push) pushHistory(text);
+  }
+
+  // --- Counters ---
+  function countWords(text){
+    // Match tokens containing letters or numbers, allowing internal apostrophes/hyphens
+    const m = text.trim().match(/[A-Za-zÀ-ÖØ-öø-ÿ0-9]+(?:['’\-][A-Za-zÀ-ÖØ-öø-ÿ0-9]+)*/g);
+    return m ? m.length : 0;
+  }
+  function updateCounts(){
+    const val = editor.value;
+    charEl.textContent = val.length;
+    wordEl.textContent = countWords(val);
+  }
+
+  // --- Case helpers ---
+  const SMALL = new Set(['a','an','the','and','or','but','for','nor','as','at','by','from','in','into','near','of','on','onto','to','vs','via','per','with','without','over','under','off','up','down']);
+  const UPPER = s => s.toUpperCase();
+  const LOWER = s => s.toLowerCase();
+  const CAP = s => s.charAt(0).toUpperCase() + s.slice(1);
+  function titleCase(str){
+    const lower = str.toLowerCase();
+    // Split and keep delimiters to preserve spacing/hyphens/slashes
+    const parts = lower.split(/(\s+|[-–—:/])/g);
+    return parts.map((part, i) => {
+      if (/(\s+|[-–—:/])/.test(part) || part === '') return part;
+      const isFirst = i === 0;
+      const isLast = i === parts.length-1;
+      if (!isFirst && !isLast && SMALL.has(part)) return part;
+      return CAP(part);
+    }).join('');
+  }
+  function sentenceCase(text){
+    const lower = text.toLowerCase();
+    // Uppercase the first letter of the string and after . ! ?
+    return lower.replace(/(^\s*[a-zà-öø-ÿ])|([.!?]\s+[a-zà-öø-ÿ])/g, t => t.toUpperCase());
+  }
+
+  function transformSelectionOrAll(fn){
+    const start = editor.selectionStart;
+    const end = editor.selectionEnd;
+    if (start !== end){
+      const before = editor.value.slice(0,start);
+      const sel = editor.value.slice(start,end);
+      const after = editor.value.slice(end);
+      const changed = fn(sel);
+      editor.value = before + changed + after;
+      editor.selectionStart = start;
+      editor.selectionEnd = start + changed.length;
+    }else{
+      const changed = fn(editor.value);
+      editor.value = changed;
+      editor.selectionStart = editor.selectionEnd = editor.value.length;
+    }
+    updateCounts();
+    pushHistory(editor.value);
+    editor.focus();
+  }
+
+  // --- Wire up events ---
+  editor.addEventListener('input', () => {
+    updateCounts();
+    pushHistory(editor.value);
+  });
+  editor.addEventListener('keydown', (e) => {
+    const key = e.key.toLowerCase();
+    if ((e.ctrlKey || e.metaKey) && key === 'z'){
+      e.preventDefault(); undo();
+    }else if ((e.ctrlKey || e.metaKey) && (key === 'y' || (e.shiftKey && key === 'z'))){
+      e.preventDefault(); redo();
+    }
+  });
+
+  upperBtn.addEventListener('click', () => transformSelectionOrAll(UPPER));
+  lowerBtn.addEventListener('click', () => transformSelectionOrAll(LOWER));
+  titleBtn.addEventListener('click', () => transformSelectionOrAll(titleCase));
+  sentenceBtn.addEventListener('click', () => transformSelectionOrAll(sentenceCase));
+  clearBtn.addEventListener('click', () => {
+    if (!editor.value) return;
+    if (confirm('Delete all text?')) setEditor('', true);
+  });
+  undoBtn.addEventListener('click', undo);
+  redoBtn.addEventListener('click', redo);
+
+  // Init
+  pushHistory('');
+  updateCounts();
+})();
+</script>
+</body>
+</html>
